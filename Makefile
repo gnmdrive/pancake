@@ -1,11 +1,13 @@
-CFLAGS = -Wall -Wextra
+CFLAGS = -Wall -Wextra -ggdb
+SOURCE_LIST = $(shell ls src/*)
+
 SOURCE = src/main.c
 TARGET = build/pancake
 CC = gcc
  
 all: build
 
-build: $(SOURCE)
+build: $(SOURCE_LIST)
 	$(CC) $(CFLAGS) $(SOURCE) -o $(TARGET)
 
 run: build
