@@ -1,0 +1,17 @@
+@number 99                                       ; variable
+:cr "\n"                                         ; carriage return
+:error-msg "ERROR: astonishing syntax" cr end    ; this is a constant
+:add(a, b) a b + end                             ; this is a function
+
+@message "Pancake is Awsome!\n"                  ; string variable
+@hobbies ["programming", "reading"]              ; array
+
+:increment(n) n 1 + n = end                      ; increment number
+:zeroed(n) 0 n = end                             ; assign 0 to number
+
+:main(args)                                      ; :main also valid
+    15 number add number =
+    number zeroed
+    number increment
+    number .
+end                                              ; main routine
