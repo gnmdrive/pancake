@@ -4,13 +4,11 @@
 #include <string.h>
 #include <assert.h>
 
-#include "stack.h"
+#define ERR_PREFIX "ERROR %s:%d: "          // error prefix for file path and line number
+#define ERR_EXP __FILE__, __LINE__    // arguments expansion
 
-void raise_generic_error(const char *message, const char *reason)
-{
-    fprintf(stderr, message, reason);
-    exit(EXIT_FAILURE);
-}
+#include "stack.h"
+#include "lexer.h"
 
 size_t get_file_content_length(FILE *file_pointer)
 {
@@ -31,7 +29,10 @@ FILE *open_file(const char *file_path)
 {
     // open file in reading mode
     FILE *file_pointer = fopen(file_path, "r");
-    if (file_pointer == NULL) raise_generic_error("Could not open file: %s\n", file_path);
+    if (file_pointer == NULL) {
+        fprintf(stderr, ERR_PREFIX"Could not open file: %s\n", ERR_EXP, file_path);
+        exit(EXIT_FAILURE);
+    }
     return file_pointer;
 }
 
@@ -44,7 +45,10 @@ char *read_content_from_file(const char *file_path)
 
     // allocate necessary memory
     char* buffer = calloc(1, buffer_size);
-    if (buffer == NULL) raise_generic_error("Could not allocate memory\n", NULL);
+    if (buffer == NULL) {
+        fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
+        exit(EXIT_FAILURE);
+    }
 
     // read 1*buffer_size bytes from file
     size_t read_bytes = fread(buffer, 1, buffer_size, file_pointer);
@@ -56,14 +60,15 @@ char *read_content_from_file(const char *file_path)
 }
 
 #define MEM_CAPACITY 128
-#define FILE_PATH "examples/code.pc"
+#define FILE_PATH "examples/routines_vars.pc"
 
 int main()
 {
-    Stack *mem = st_create_on_heap(MEM_CAPACITY);
+    // Stack *mem = st_create_on_heap(MEM_CAPACITY);
     char *buffer = read_content_from_file(FILE_PATH);
-    printf("hello from pancake\n");
+
+    LexOutcome *lo = lex_buffer(buffer);
+    loutcome_log(lo);
 
     return EXIT_SUCCESS;
 }
-

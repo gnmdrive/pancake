@@ -2,7 +2,7 @@
 #define STACK_H_
 #include <stdlib.h>
 
-#define DEFAULT_INITIAL_CAPACITY 5
+#define DEFAULT_STACK_INITIAL_CAPACITY 16
 
 typedef struct {
     char **items;
@@ -14,15 +14,32 @@ Stack st_create_on_stack(const size_t initial_capacity)
 {
     Stack stack = {0};
     stack.capacity = initial_capacity;
+
     stack.items = calloc(initial_capacity, sizeof(*stack.items));
+    if (stack.items == NULL) {
+        fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
+        exit(EXIT_FAILURE);
+    }
+
     return stack;
 }
 
 Stack *st_create_on_heap(const size_t initial_capacity)
 {
     Stack *stack = malloc(sizeof(Stack));
+    if (stack == NULL) {
+        fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
+        exit(EXIT_FAILURE);
+    }
+
+    stack->count = 0;
     stack->capacity = initial_capacity;
     stack->items = calloc(initial_capacity, sizeof(*stack->items));
+    if (stack->items == NULL) {
+        fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
+        exit(EXIT_FAILURE);
+    }
+
     return stack;
 }
 
@@ -30,13 +47,20 @@ void st_push(Stack *stack, char *item)
 {
     // if count is equal to capacity reallocate memory using more space
     if (stack->count == stack->capacity) {
-        stack->capacity = stack->capacity == 0 ? DEFAULT_INITIAL_CAPACITY : (stack->capacity*2);
+        stack->capacity = stack->capacity == 0 ? DEFAULT_STACK_INITIAL_CAPACITY : (stack->capacity*2);
         stack->items = realloc(stack->items, stack->capacity*sizeof(*stack->items));
-        assert(stack->items != NULL && "Are you serious? Out of RAM");
+        if (stack->items == NULL) {
+            fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
+            exit(EXIT_FAILURE);
+        }
     }
 
     // this function manages memory on its own
     *(stack->items+stack->count) = malloc(strlen(item));
+    if (*(stack->items+stack->count) == NULL) {
+        fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
+        exit(EXIT_FAILURE);
+    }
 
     // it doesn't matter where item argument is allocated, it will be copied
     strcpy(*(stack->items+stack->count++), item);

@@ -1,6 +1,6 @@
 # Pancake is a Stack based Programming Langauge written in C
 
-Highly inspiderd by Porth, currently in development
+Highly inspiderd by Forth, currently in development
 
 **Pancake?** Yes, because usually, each pancake lies on top of each other, just like the structure of a [stack](https://en.wikipedia.org/wiki/Stack_(abstract_data_type)) ;)
 
