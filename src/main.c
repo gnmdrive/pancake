@@ -56,12 +56,13 @@ char *read_content_from_file(const char *file_path)
 }
 
 #define MEM_CAPACITY 128
-#define FILE_PATH "code.pc"
+#define FILE_PATH "examples/code.pc"
 
 int main()
 {
     Stack *mem = st_create_on_heap(MEM_CAPACITY);
     char *buffer = read_content_from_file(FILE_PATH);
+    printf("hello from pancake\n");
 
     return EXIT_SUCCESS;
 }
