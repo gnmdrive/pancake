@@ -1,4 +1,4 @@
-# Pancake is a Stack based Programming Langauge written in C
+# Pancake is a stack based interpreted programming langauge written in C
 
 Highly inspiderd by Forth, currently in development
 
@@ -6,7 +6,8 @@ Highly inspiderd by Forth, currently in development
 
 ```
 ; code example (showcase purpose)
-@main 5 2 * . end
+@text "Hello, World!"
+:main text cr . end
 ```
 
 ## Features
@@ -18,6 +19,6 @@ Highly inspiderd by Forth, currently in development
 * Turing complete Programming Language (that's the goal)
 
 ### Next Steps
-* Implement the lexer to tokenize source code
+* Work on the interpreter, fullfill requirements
+* Think about new features or addons
 * Write basic tests
-* Use make as build tool (learn it, firstly :|)
