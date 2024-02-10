@@ -1,6 +1,7 @@
 #ifndef LEXER_H_
 #define LEXER_H_
 #include <ctype.h>
+#include <string.h>
 
 #define DEFAULT_LEXOUTCOME_INITIAL_CAPACITY 128
 #define MAXIMUM_TOKEN_TXT_SIZE 64
@@ -12,15 +13,22 @@ typedef enum {
     LIT_INT,
     LIT_FLOAT,
 
+    ID_INVOCATION,
+
     ID_VAR,
     VAR_SYM,
 
     ID_ROUTINE,
     ROUTINE_SYM,
+
+    // keywords
     ROUTINE_END,
+    KW_DUP,
 
     OP_PLUS,
-    OP_PRINT
+    OP_PRINT,
+
+    _IOTA
 } TokenType;
 
 char *ttype_tostr(TokenType ttype)
@@ -38,6 +46,9 @@ char *ttype_tostr(TokenType ttype)
         case LIT_FLOAT:
             return "LIT_FLOAT";
             break;
+        case ID_INVOCATION:
+            return "ID_INVOCATION";
+            break;
         case ID_ROUTINE:
             return "ID_ROUTINE";
             break;
@@ -53,6 +64,9 @@ char *ttype_tostr(TokenType ttype)
         case VAR_SYM:
             return "VAR_SYM";
             break;
+        case KW_DUP:
+            return "KW_DUP";
+            break;
         case OP_PLUS:
             return "OP_PLUS";
             break;
@@ -63,6 +77,21 @@ char *ttype_tostr(TokenType ttype)
             assert(0 && "Unreachable");
             break;
     }
+}
+
+char **token_types;
+#define BUILD_TOKEN_TYPES(tt) do {               \
+    tt = calloc(_IOTA, sizeof(char*));           \
+    for (int i = 0; i < _IOTA; ++i) {            \
+        char *str = ttype_tostr((TokenType) i);  \
+        tt[i] = malloc(strlen(str));             \
+        strcpy(tt[i], str);                      \
+    }                                            \
+} while (0)
+
+void token_types_log() {
+    for (int i = 0; i < _IOTA; ++i) 
+        printf("%s\n", token_types[i]);
 }
 
 typedef struct {
@@ -108,7 +137,7 @@ Token *tk_create(char *txt, Location loc, TokenType ttype)
 
 void tk_log(Token *token)
 {
-    printf("(%s) %zu:%zu %s\n", ttype_tostr(token->ttype), token->loc.row, token->loc.col, token->txt);
+    printf("%-15s:%zu:%-5zu %-15s\n", ttype_tostr(token->ttype), token->loc.row, token->loc.col, token->txt);
 }
 
 void tk_destroy(Token *token)
@@ -156,6 +185,11 @@ void loutcome_append(LexOutcome *lex_outcome, Token *token)
     lex_outcome->tokens[lex_outcome->count++] = token;
 }
 
+Token *loutcome_top(LexOutcome *lex_outcome)
+{
+    return *(lex_outcome->tokens + lex_outcome->count-1);
+}
+
 void loutcome_log(LexOutcome *lex_outcome)
 {
     for (size_t i = 0; i < lex_outcome->count; ++i) {
@@ -200,12 +234,8 @@ LexOutcome *lex_buffer(char* buffer)
             c++;
             while (buffer[c] != '\n') c++;
         } else {
-            // perhaps a token has been found
 
-            // if (lex_outcome->count != 0) {
-            //     printf("ttype = %d\n", (*lex_outcome->tokens+lex_outcome->count-1)->ttype);
-            // }
-
+            // token has been found
             char* txt = calloc(MAXIMUM_TOKEN_TXT_SIZE, 1);
             TokenType ttype = UNKNOWN;
 
@@ -240,7 +270,7 @@ LexOutcome *lex_buffer(char* buffer)
                 // find identifier or keyword
 
                 col_start = col;
-                // allow numbers after first char and hyphen
+                // allow numbers and hyphen symbol after first char
                 while (isalnum(buffer[c]) || buffer[c] == '-') {
                     c++;
                     col++;
@@ -251,15 +281,20 @@ LexOutcome *lex_buffer(char* buffer)
                 // determine token type
                 if (lex_outcome->count != 0) {
                     // check if it is and identifier
-                    // printf("%d vs. %d\n", (*lex_outcome->tokens+lex_outcome->count-0)->ttype, ROUTINE_SYM);
-                    TokenType tt = (*lex_outcome->tokens+lex_outcome->count-1)->ttype;
-                    // printf("ttype = %ld\n", tt);
+                    TokenType tt = loutcome_top(lex_outcome)->ttype;
                     if (tt == ROUTINE_SYM) ttype = ID_ROUTINE;
                     else if (tt == VAR_SYM) ttype = ID_VAR;
                 }
 
-                // it is a keyword
-                if (strcmp(txt, "end") == 0) ttype = ROUTINE_END;
+                // type stills unkown, so it's not an ID
+                if (ttype == UNKNOWN) {
+                    // check if it is a keyword
+                    if (strcmp(txt, "end") == 0) ttype = ROUTINE_END;
+                    else if (strcmp(txt, "dup") == 0) ttype = KW_DUP;
+
+                        // identifier invacation
+                    else ttype = ID_INVOCATION;
+                }
 
             } else if (isdigit(buffer[c])) {
                 // find numeric literal
@@ -295,9 +330,6 @@ LexOutcome *lex_buffer(char* buffer)
 
             Token *tk = tk_create(txt, (Location) {row, col_start}, ttype);
             loutcome_append(lex_outcome, tk);
-
-            // printf("[COUNT %d]\n", lex_outcome->count);
-            // loutcome_log(lex_outcome);
         }
     }
 
