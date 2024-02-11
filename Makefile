@@ -1,3 +1,4 @@
+LIBS = -lm
 CFLAGS = -Wall -Wextra -ggdb
 SOURCE_LIST = $(shell ls src/*)
 
@@ -8,7 +9,7 @@ CC = gcc
 all: build
 
 build: $(SOURCE_LIST)
-	$(CC) $(CFLAGS) $(SOURCE) -o $(TARGET)
+	$(CC) $(CFLAGS) $(SOURCE) -o $(TARGET) $(LIBS)
 
 run: build
 	./$(TARGET)
