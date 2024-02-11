@@ -25,7 +25,11 @@ typedef enum {
     ROUTINE_END,
     KW_DUP,
 
-    OP_PLUS,
+    OP_SUM,
+    OP_SUB,
+    OP_MUL,
+    OP_DIV,
+    OP_MOD,
     OP_PRINT,
 
     _IOTA
@@ -67,8 +71,20 @@ char *ttype_tostr(TokenType ttype)
         case KW_DUP:
             return "KW_DUP";
             break;
-        case OP_PLUS:
-            return "OP_PLUS";
+        case OP_SUM:
+            return "OP_SUM";
+            break;
+        case OP_SUB:
+            return "OP_SUB";
+            break;
+        case OP_MUL:
+            return "OP_MUL";
+            break;
+        case OP_DIV:
+            return "OP_DIV";
+            break;
+        case OP_MOD:
+            return "OP_MOD";
             break;
         case OP_PRINT:
             return "OP_PRINT";
@@ -299,6 +315,9 @@ LexOutcome *lex_buffer(char* buffer)
             } else if (isdigit(buffer[c])) {
                 // find numeric literal
 
+                // current number is negative
+                if (buffer[c-1] == '-') strcat(txt, "-");
+
                 bool flt = false;
                 col_start = col;
                 while (isdigit(buffer[c])) {
@@ -322,14 +341,24 @@ LexOutcome *lex_buffer(char* buffer)
                 if (strcmp(txt, "@") == 0) ttype = VAR_SYM;
                 else if (strcmp(txt, ":") == 0) ttype = ROUTINE_SYM;
                 else if (strcmp(txt, ".") == 0) ttype = OP_PRINT;
-                else if (strcmp(txt, "+") == 0) ttype = OP_PLUS;
+                else if (strcmp(txt, "+") == 0) ttype = OP_SUM;
+                else if (strcmp(txt, "*") == 0) ttype = OP_MUL;
+                else if (strcmp(txt, "/") == 0) ttype = OP_DIV;
+                else if (strcmp(txt, "-") == 0) {
+                    if (!isdigit(buffer[c+1])) ttype = OP_SUB;
+                }
+                else if (strcmp(txt, "%") == 0) ttype = OP_MOD;
 
                 c++;
                 col++;
             }
 
-            Token *tk = tk_create(txt, (Location) {row, col_start}, ttype);
-            loutcome_append(lex_outcome, tk);
+
+            // if type is unknow then current token should not be added to the outcome
+            if (ttype != UNKNOWN) {
+                Token *tk = tk_create(txt, (Location) {row, col_start}, ttype);
+                loutcome_append(lex_outcome, tk);
+            }
         }
     }
 
