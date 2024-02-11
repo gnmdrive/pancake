@@ -9,6 +9,7 @@
 
 #include "stack.h"
 #include "lexer.h"
+#include "interpreter.h"
 
 size_t get_file_content_length(FILE *file_pointer)
 {
@@ -60,20 +61,18 @@ char *read_content_from_file(const char *file_path)
 }
 
 #define MEM_CAPACITY 128
-#define FILE_PATH "examples/hello_world.pc"
+#define FILE_PATH "examples/arithmetic.pc"
 
 int main()
 {
     BUILD_TOKEN_TYPES(token_types);
-    token_types_log();
-
-    printf("========================================================\n");
 
     Stack *mem = st_create_on_heap(MEM_CAPACITY);
     char *buffer = read_content_from_file(FILE_PATH);
 
     LexOutcome *lex_outcome = lex_buffer(buffer);
     loutcome_log(lex_outcome);
+    interpret_lex_outcome(lex_outcome, mem);
 
     return EXIT_SUCCESS;
 }
