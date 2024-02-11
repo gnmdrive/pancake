@@ -103,8 +103,6 @@ void interpret_lex_outcome(LexOutcome *lex_outcome, Stack *mem)
                     // verify is last two items in mem are actually numbers
                     CHECK_LAST_NUMBERS_TYPE(mem, "ERROR: tried to operate on values that are not numbers\n");
 
-                    st_display(mem);
-
                     float x, y;
                     retrieve_last_numbers_float(&x, &y, mem);
 
@@ -119,9 +117,8 @@ void interpret_lex_outcome(LexOutcome *lex_outcome, Stack *mem)
                         case OP_MUL: numeric_result = x * y;
                             break;
                         case OP_DIV: {
-                            if (y == 0) {
-                                assert("Can't divide by zero");
-                            } else numeric_result = x / y;
+                            assert(y != 0 && "Can't divide by zero");
+                            numeric_result = x / y;
                         } break;
                         case OP_MOD: numeric_result = fmod(x, (int) y);
                             break;
@@ -147,6 +144,12 @@ void interpret_lex_outcome(LexOutcome *lex_outcome, Stack *mem)
                 case OP_PRINT: {
                     assert(mem->count >= 1);
                     printf("%s", st_peek(mem, 0));
+                    st_pop(mem);
+                } break;
+
+                case OP_PRINT_LN: {
+                    assert(mem->count >= 1);
+                    printf("%s\n", st_peek(mem, 0));
                     st_pop(mem);
                 } break;
 

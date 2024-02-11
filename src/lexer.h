@@ -30,7 +30,9 @@ typedef enum {
     OP_MUL,
     OP_DIV,
     OP_MOD,
+
     OP_PRINT,
+    OP_PRINT_LN,
 
     _IOTA
 } TokenType;
@@ -85,6 +87,9 @@ char *ttype_tostr(TokenType ttype)
             break;
         case OP_MOD:
             return "OP_MOD";
+            break;
+        case OP_PRINT_LN:
+            return "OP_PRINT_LN";
             break;
         case OP_PRINT:
             return "OP_PRINT";
@@ -340,7 +345,13 @@ LexOutcome *lex_buffer(char* buffer)
                 strncat(txt, buffer + c_start, 1);
                 if (strcmp(txt, "@") == 0) ttype = VAR_SYM;
                 else if (strcmp(txt, ":") == 0) ttype = ROUTINE_SYM;
-                else if (strcmp(txt, ".") == 0) ttype = OP_PRINT;
+                else if (strcmp(txt, ".") == 0) {
+                    if (buffer[c+1] == '.') {
+                        ttype = OP_PRINT;
+                        c++;
+                    }
+                    else ttype = OP_PRINT_LN;
+                }
                 else if (strcmp(txt, "+") == 0) ttype = OP_SUM;
                 else if (strcmp(txt, "*") == 0) ttype = OP_MUL;
                 else if (strcmp(txt, "/") == 0) ttype = OP_DIV;

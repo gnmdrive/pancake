@@ -7,7 +7,7 @@ Highly inspiderd by Forth, currently in development
 ```
 ; code example (showcase purpose)
 @text "Hello, World!"
-:main text cr . end
+:main text . end
 ```
 
 ## Features

@@ -71,7 +71,7 @@ int main()
     char *buffer = read_content_from_file(FILE_PATH);
 
     LexOutcome *lex_outcome = lex_buffer(buffer);
-    loutcome_log(lex_outcome);
+    // loutcome_log(lex_outcome);
     interpret_lex_outcome(lex_outcome, mem);
 
     return EXIT_SUCCESS;
