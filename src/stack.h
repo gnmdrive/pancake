@@ -66,16 +66,17 @@ void st_push(Stack *stack, char *item)
     strcpy(*(stack->items+stack->count++), item);
 }
 
-char *st_peek(Stack *stack)
+char *st_peek(Stack *stack, size_t n)
 {
-    return *(stack->items+stack->count-1);
+    return *(stack->items+stack->count-1-n);
 }
 
 void st_pop(Stack *stack)
 {
     // this function is intended to be used right after st_peek(st) if you
     // want to get top element before deleting
-    free(*(stack->items+stack->count--));
+    free(*(stack->items+stack->count-1));
+    stack->count--;
 }
 
 void st_destroy_from_stack(Stack *stack)
