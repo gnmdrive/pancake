@@ -1,4 +1,15 @@
 @age 18
-:print-age "Age: " . age . cr end
+@online true
+@name "Gianmarco"
+@height 1.818
 
-:main print-age age 1 + age ! print-age end
+:dump . cr end
+
+:print-info
+    "Name: " . name dump
+    "Age: " . age dump
+    "Online: " . online dump
+    "Height: " . height dump
+end
+
+:main print-info end

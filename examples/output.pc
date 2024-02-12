@@ -9,11 +9,11 @@
 end
 
 :ascii c b a emit emit emit end
-:out . cr end
+:dump . cr end
 
 :main 
     ascii cr
     show-mem
     "The quick brown fox " .
-    "jumps over the lazy dog" out 
+    "jumps over the lazy dog" dump 
 end
