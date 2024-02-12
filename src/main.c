@@ -4,6 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
+// #define DEBUG
 #define ERR_PREFIX "ERROR %s:%d: "          // error prefix for file path and line number
 #define ERR_EXP __FILE__, __LINE__    // arguments expansion
 
@@ -67,12 +68,27 @@ int main()
 {
     BUILD_TOKEN_TYPES(token_types);
 
-    Stack *mem = st_create_on_heap(MEM_CAPACITY);
     char *buffer = read_content_from_file(FILE_PATH);
+    LexWork *lex_work = lex_buffer(buffer);
 
-    LexOutcome *lex_outcome = lex_buffer(buffer);
-    // loutcome_log(lex_outcome);
-    interpret_lex_outcome(lex_outcome, mem);
+#ifdef DEBUG
+
+    printf(">>>>>>> [LEX WORK]\n");
+    lwork_log(lex_work);
+    printf("=========================================================\n");
+
+#endif // DEBUG
+
+    Stack *mem = st_create_on_heap(MEM_CAPACITY);
+
+    
+#ifdef DEBUG
+    printf(">>>>>>> [ROUTINES]\n");
+#endif // DEBUG
+    start_interpreter(mem, lex_work);
+#ifdef DEBUG
+    printf("=========================================================\n");
+#endif // DEBUG
 
     return EXIT_SUCCESS;
 }

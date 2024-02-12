@@ -22,8 +22,11 @@ typedef enum {
     ROUTINE_SYM,
 
     // keywords
-    ROUTINE_END,
+    KW_END,
     KW_DUP,
+    KW_DROP,
+    KW_SWAP,
+    KW_OVER,
 
     OP_SUM,
     OP_SUB,
@@ -33,6 +36,7 @@ typedef enum {
 
     OP_PRINT,
     OP_PRINT_LN,
+    OP_PRINT_MEM,
 
     _IOTA
 } TokenType;
@@ -61,17 +65,26 @@ char *ttype_tostr(TokenType ttype)
         case ROUTINE_SYM:
             return "ROUTINE_SYM";
             break;
-        case ROUTINE_END:
-            return "ROUTINE_END";
-            break;
         case ID_VAR:
             return "ID_VAR";
             break;
         case VAR_SYM:
             return "VAR_SYM";
             break;
+        case KW_END:
+            return "KW_END";
+            break;
         case KW_DUP:
             return "KW_DUP";
+            break;
+        case KW_DROP:
+            return "KW_DROP";
+            break;
+        case KW_SWAP:
+            return "KW_SWAP";
+            break;
+        case KW_OVER:
+            return "KW_OVER";
             break;
         case OP_SUM:
             return "OP_SUM";
@@ -93,6 +106,9 @@ char *ttype_tostr(TokenType ttype)
             break;
         case OP_PRINT:
             return "OP_PRINT";
+            break;
+        case OP_PRINT_MEM:
+            return "OP_PRINT_MEM";
             break;
         default:
             assert(0 && "Unreachable");
@@ -131,7 +147,7 @@ typedef struct {
     size_t count;
     size_t capacity;
     char *file_path;
-} LexOutcome;
+} LexWork;
 
 Token *tk_create(char *txt, Location loc, TokenType ttype)
 {
@@ -167,71 +183,71 @@ void tk_destroy(Token *token)
     free(token);
 }
 
-LexOutcome *loutcome_create(char *file_path, const size_t initial_capacity)
+LexWork *lwork_create(char *file_path, const size_t initial_capacity)
 {
-    LexOutcome *lex_outcome = malloc(sizeof(LexOutcome));
-    if (lex_outcome == NULL) {
+    LexWork *lex_work = malloc(sizeof(LexWork));
+    if (lex_work == NULL) {
         fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
         exit(EXIT_FAILURE);
     }
 
-    lex_outcome->file_path = file_path;
-    lex_outcome->count = 0;
-    lex_outcome->capacity = initial_capacity;
+    lex_work->file_path = file_path;
+    lex_work->count = 0;
+    lex_work->capacity = initial_capacity;
 
-    lex_outcome->tokens = calloc(initial_capacity, sizeof(*lex_outcome->tokens));
-    if (lex_outcome->tokens == NULL) {
+    lex_work->tokens = calloc(initial_capacity, sizeof(*lex_work->tokens));
+    if (lex_work->tokens == NULL) {
         fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
         exit(EXIT_FAILURE);
     }
 
-    return lex_outcome;
+    return lex_work;
 }
 
-void loutcome_append(LexOutcome *lex_outcome, Token *token)
+void lwork_append(LexWork *lex_work, Token *token)
 {
     // reallocate memory doubling space
-    if (lex_outcome->count == lex_outcome->capacity) {
+    if (lex_work->count == lex_work->capacity) {
 
         // new computed capacity
-        lex_outcome->capacity = lex_outcome->capacity == 0 ? DEFAULT_LEXOUTCOME_INITIAL_CAPACITY : (lex_outcome->capacity*2);
+        lex_work->capacity = lex_work->capacity == 0 ? DEFAULT_LEXOUTCOME_INITIAL_CAPACITY : (lex_work->capacity*2);
 
-        lex_outcome->tokens = realloc(lex_outcome->tokens, lex_outcome->capacity*sizeof(*lex_outcome->tokens));
-        if (lex_outcome->tokens == NULL) {
+        lex_work->tokens = realloc(lex_work->tokens, lex_work->capacity*sizeof(*lex_work->tokens));
+        if (lex_work->tokens == NULL) {
             fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
             exit(EXIT_FAILURE);
         }
     }
 
-    lex_outcome->tokens[lex_outcome->count++] = token;
+    lex_work->tokens[lex_work->count++] = token;
 }
 
-Token *loutcome_top(LexOutcome *lex_outcome)
+Token *lwork_top(LexWork *lex_work)
 {
-    return *(lex_outcome->tokens + lex_outcome->count-1);
+    return *(lex_work->tokens + lex_work->count-1);
 }
 
-void loutcome_log(LexOutcome *lex_outcome)
+void lwork_log(LexWork *lex_work)
 {
-    for (size_t i = 0; i < lex_outcome->count; ++i) {
-        tk_log(*(lex_outcome->tokens+i));
+    for (size_t i = 0; i < lex_work->count; ++i) {
+        tk_log(*(lex_work->tokens+i));
     }
 }
 
-void loutcome_destroy(LexOutcome *lex_outcome)
+void lwork_destroy(LexWork *lex_work)
 {
     // deallocate all tokens
-    for (size_t i = 0; i < lex_outcome->count; ++i)
-        tk_destroy(*(lex_outcome->tokens+i));
+    for (size_t i = 0; i < lex_work->count; ++i)
+        tk_destroy(*(lex_work->tokens+i));
 
-    free(lex_outcome->tokens);
-    free(lex_outcome);
+    free(lex_work->tokens);
+    free(lex_work);
 }
 
 
-LexOutcome *lex_buffer(char* buffer)
+LexWork *lex_buffer(char* buffer)
 {
-    LexOutcome *lex_outcome = loutcome_create("unknown.pc", 32);
+    LexWork *lex_work = lwork_create("unknown.pc", 32);
     size_t buffer_size = strlen(buffer);
 
     // current char position
@@ -300,9 +316,9 @@ LexOutcome *lex_buffer(char* buffer)
                 strncat(txt, buffer + c_start, c - c_start);
 
                 // determine token type
-                if (lex_outcome->count != 0) {
+                if (lex_work->count != 0) {
                     // check if it is and identifier
-                    TokenType tt = loutcome_top(lex_outcome)->ttype;
+                    TokenType tt = lwork_top(lex_work)->ttype;
                     if (tt == ROUTINE_SYM) ttype = ID_ROUTINE;
                     else if (tt == VAR_SYM) ttype = ID_VAR;
                 }
@@ -310,10 +326,13 @@ LexOutcome *lex_buffer(char* buffer)
                 // type stills unkown, so it's not an ID
                 if (ttype == UNKNOWN) {
                     // check if it is a keyword
-                    if (strcmp(txt, "end") == 0) ttype = ROUTINE_END;
+                    if (strcmp(txt, "end") == 0) ttype = KW_END;
                     else if (strcmp(txt, "dup") == 0) ttype = KW_DUP;
+                    else if (strcmp(txt, "drop") == 0) ttype = KW_DROP; 
+                    else if (strcmp(txt, "swap") == 0) ttype = KW_SWAP; 
+                    else if (strcmp(txt, "over") == 0) ttype = KW_OVER; 
 
-                        // identifier invacation
+                    // identifier invacation
                     else ttype = ID_INVOCATION;
                 }
 
@@ -343,22 +362,37 @@ LexOutcome *lex_buffer(char* buffer)
                 // find a symbol, or whatever doesn't match previous if statements
                 col_start = col;
                 strncat(txt, buffer + c_start, 1);
+
                 if (strcmp(txt, "@") == 0) ttype = VAR_SYM;
                 else if (strcmp(txt, ":") == 0) ttype = ROUTINE_SYM;
-                else if (strcmp(txt, ".") == 0) {
-                    if (buffer[c+1] == '.') {
-                        ttype = OP_PRINT;
-                        c++;
-                    }
-                    else ttype = OP_PRINT_LN;
-                }
                 else if (strcmp(txt, "+") == 0) ttype = OP_SUM;
                 else if (strcmp(txt, "*") == 0) ttype = OP_MUL;
                 else if (strcmp(txt, "/") == 0) ttype = OP_DIV;
+                else if (strcmp(txt, "%") == 0) ttype = OP_MOD;
+
                 else if (strcmp(txt, "-") == 0) {
                     if (!isdigit(buffer[c+1])) ttype = OP_SUB;
                 }
-                else if (strcmp(txt, "%") == 0) ttype = OP_MOD;
+                else if (strcmp(txt, ".") == 0) {
+
+                    if (buffer[c+1] == '.') {
+                        if (buffer[c+2] == '.') {
+                            strncat(txt, buffer + c_start, 2);
+                            ttype = OP_PRINT_MEM;
+                            c += 2;
+                        } else {
+                            strncat(txt, buffer + c_start, 1);
+                            ttype = OP_PRINT;
+                            c++;
+                        }
+                    }
+                    else ttype = OP_PRINT_LN;
+                }
+
+                else {
+                    fprintf(stderr, ERR_PREFIX"Symbol not recognized: %s\n", ERR_EXP, txt);
+                    exit(EXIT_FAILURE);
+                }
 
                 c++;
                 col++;
@@ -368,12 +402,12 @@ LexOutcome *lex_buffer(char* buffer)
             // if type is unknow then current token should not be added to the outcome
             if (ttype != UNKNOWN) {
                 Token *tk = tk_create(txt, (Location) {row, col_start}, ttype);
-                loutcome_append(lex_outcome, tk);
+                lwork_append(lex_work, tk);
             }
         }
     }
 
-    return lex_outcome;
+    return lex_work;
 }
 
 #endif  // LEXER_H_
