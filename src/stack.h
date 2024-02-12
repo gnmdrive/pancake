@@ -103,10 +103,10 @@ void st_display(Stack *stack)
         char **end_pt = begin_pt + stack->count-1; 
 
         printf("[");
-        while (end_pt != begin_pt)
-            printf("%s, ", *end_pt--);
-        printf("%s]\n", *begin_pt);
-    } else printf("[]\n");
+        while (begin_pt != end_pt)
+            printf("%s, ", *begin_pt++);
+        printf("%s <-\n", *begin_pt);
+    } else printf("[ <-\n");
 }
 
 #endif  // STACK_H_
