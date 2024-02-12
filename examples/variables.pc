@@ -1,4 +1,4 @@
 @age 18
-:print-age "Age: " .. age . end
+:print-age "Age: " . age . cr end
 
 :main print-age age 1 + age ! print-age end

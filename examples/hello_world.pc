@@ -1,2 +1,2 @@
-:hello-world "Hello World!" . end
-:main hello-world end
+@text "Hello, World!"
+:main text . cr end

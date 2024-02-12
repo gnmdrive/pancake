@@ -1,9 +1,8 @@
 @number 99                                       ; variable
-:cr "\n"                                         ; carriage return
 :error-msg "ERROR: astonishing syntax" cr end    ; this is a constant
 :add(a, b) a b + end                             ; this is a function
 
-@message "Pancake is Awsome!\n"                  ; string variable
+@message "Pancake is Awsome!"                    ; string variable
 @hobbies ["programming", "reading"]              ; array
 
 :increment(n) n 1 + n = end                      ; increment number
@@ -13,5 +12,5 @@
     15 number add number =
     number zeroed
     number increment
-    number .
+    number . cr
 end                                              ; main routine

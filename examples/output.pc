@@ -1,0 +1,19 @@
+@a 97
+@b 98
+@c 99
+
+:drop3 drop drop drop end
+:show-mem 
+    34 "foo" 11.345
+    .mem drop3
+end
+
+:ascii c b a emit emit emit end
+:out . cr end
+
+:main 
+    ascii cr
+    show-mem
+    "The quick brown fox " .
+    "jumps over the lazy dog" out 
+end
