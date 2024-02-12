@@ -4,7 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
-// #define DEBUG
+#define DEBUG
 #define ERR_PREFIX "ERROR %s:%d: "          // error prefix for file path and line number
 #define ERR_EXP __FILE__, __LINE__    // arguments expansion
 
@@ -62,7 +62,7 @@ char *read_content_from_file(const char *file_path)
 }
 
 #define MEM_CAPACITY 128
-#define FILE_PATH "examples/arithmetic.pc"
+#define FILE_PATH "examples/variables.pc"
 
 int main()
 {
@@ -74,17 +74,20 @@ int main()
 #ifdef DEBUG
 
     printf(">>>>>>> [LEX WORK]\n");
-    lwork_log(mod);
+    mod_log(mod);
     printf("=========================================================\n");
 
 #endif // DEBUG
 
-    GScope *gscope = gscope_create(ROUTINES_INITIAL_CAPACITY, VARIABLES_INITIAL_CAPACITY);
+    GScope *gscope = gscope_create(GSCOPE_ROUTINES_INITIAL_CAPACITY, GSCOPE_VARIABLES_INITIAL_CAPACITY);
     
     scan_modules(gscope, mod);
 #ifdef DEBUG
+    printf(">>>>>>> [VARIABLES]\n");
+    gscope_log_variables(gscope);
+    printf("=========================================================\n");
     printf(">>>>>>> [ROUTINES]\n");
-    gscope_log(gscope);
+    gscope_log_routines(gscope);
     printf("=========================================================\n");
 #endif // DEBUG
 

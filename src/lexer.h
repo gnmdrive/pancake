@@ -38,6 +38,8 @@ typedef enum {
     OP_PRINT_LN,
     OP_PRINT_MEM,
 
+    OP_BIND,
+
     _IOTA
 } TokenType;
 
@@ -109,6 +111,9 @@ char *ttype_tostr(TokenType ttype)
             break;
         case OP_PRINT_MEM:
             return "OP_PRINT_MEM";
+            break;
+        case OP_BIND:
+            return "OP_BIND";
             break;
         default:
             assert(0 && "Unreachable");
@@ -369,6 +374,7 @@ Module *lex_buffer(char* buffer)
                 else if (strcmp(txt, "*") == 0) ttype = OP_MUL;
                 else if (strcmp(txt, "/") == 0) ttype = OP_DIV;
                 else if (strcmp(txt, "%") == 0) ttype = OP_MOD;
+                else if (strcmp(txt, "!") == 0) ttype = OP_BIND;
 
                 else if (strcmp(txt, "-") == 0) {
                     if (!isdigit(buffer[c+1])) ttype = OP_SUB;

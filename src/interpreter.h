@@ -9,42 +9,38 @@
 #include "lexer.h"
 #include "stack.h"
 
-#define CHECK_LAST_NUMBERS_TYPE(mem, message) do {              \
-if (atoi(st_peek(mem, 0)) == 0 || atoi(st_peek(mem, 1)) == 0) { \
-    fprintf(stderr, message);                                   \
-    exit(EXIT_FAILURE);                                         \
-}                                                               \
-} while (0)
+#define CHECK_LAST_NUMBERS_TYPE(mem, message)                       \
+do {                                                                \
+    if (atoi(st_peek(mem, 0)) == 0 || atoi(st_peek(mem, 1)) == 0) { \
+        fprintf(stderr, message);                                   \
+        exit(EXIT_FAILURE);                                         \
+    }                                                               \
+} while (0)                                                         \
 
-#define ROUTINES_INITIAL_CAPACITY 16
-#define VARIABLES_INITIAL_CAPACITY 16
+#define RETRIEVE_LAST_NUMBERS_FLOAT(x, y, mem) \
+do {                                           \
+    char *a = st_peek(mem, 0);                 \
+    char *b = st_peek(mem, 1);                 \
+    float x_res = atof(a);                     \
+    float y_res = atof(b);                     \
+    st_pop(mem);                               \
+    st_pop(mem);                               \
+    *x = x_res;                                \
+    *y = y_res;                                \
+} while (0)                                    \
+
+#define GSCOPE_ROUTINES_INITIAL_CAPACITY 16
+#define GSCOPE_VARIABLES_INITIAL_CAPACITY 32
 #define TOKENS_INITIAL_CAPACITY 64
-
-void retrieve_last_numbers_float(float *x, float *y, Stack *mem)
-{
-    // peek last and second-last items from stack
-    char *a = st_peek(mem, 0);
-    char *b = st_peek(mem, 1);
-
-    float x_res = atof(a);
-    float y_res = atof(b);
-
-    st_pop(mem);
-    st_pop(mem);
-
-    *x = x_res;
-    *y = y_res;
-}
-
 
 typedef struct {
     char *id;
-    char *txt;
+    char *value;
 } Variable;
 
 typedef struct {
-    Variable var[8];
     size_t var_count;
+    Variable var[8];
 } Parameters;
 
 typedef struct {
@@ -57,18 +53,40 @@ typedef struct {
 
 typedef struct {
     Routine **routines;
-    // Variable **variables;
+    Variable **variables;
     size_t rte_capacity;
     size_t rte_count;
-    // size_t var_capacity;
-    // size_t var_count;
+    size_t var_capacity;
+    size_t var_count;
 } GScope;
+
+Variable *var_create(char *id, char *value)
+{
+    Variable *variable = malloc(sizeof(Variable));
+    variable->id = id;
+    variable->value = value;
+    return variable;
+}
+
+void var_destroy(Variable *variable)
+{
+    free(variable);
+}
 
 int gscope_search_routine(GScope *gscope, char *id)
 {
-    int j = 0;
-    while (j < (int) gscope->rte_count && strcmp(id, gscope->routines[j]->id) != 0) j++;
-    return j;
+    size_t j = 0;
+    while (j < gscope->rte_count && strcmp(id, gscope->routines[j]->id) != 0) j++;
+    if (j == gscope->rte_count) return -1;
+    else return j;
+}
+
+int gscope_search_variable(GScope *gscope, char *id)
+{
+    size_t j = 0;
+    while (j < gscope->var_count && strcmp(id, gscope->variables[j]->id) != 0) j++;
+    if (j == gscope->var_count) return -1;
+    else return j;
 }
 
 Routine *rte_create(char *id, const size_t tokens_initial_capacity)
@@ -86,7 +104,7 @@ Routine *rte_create(char *id, const size_t tokens_initial_capacity)
 void rte_append_token(Routine *routine, Token *tk)
 {
     if (routine->tk_count == routine->tk_capacity) {
-        routine->tk_capacity = routine->tk_capacity == 0 ? ROUTINES_INITIAL_CAPACITY : (routine->tk_capacity*2);
+        routine->tk_capacity = routine->tk_capacity == 0 ? TOKENS_INITIAL_CAPACITY : (routine->tk_capacity*2);
 
         routine->tokens = realloc(routine->tokens, routine->tk_capacity*sizeof(*routine->tokens));
     }
@@ -144,7 +162,7 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
                 CHECK_LAST_NUMBERS_TYPE(mem, "ERROR: tried to operate on values that are not numbers\n");
 
                 float x, y;
-                retrieve_last_numbers_float(&x, &y, mem);
+                RETRIEVE_LAST_NUMBERS_FLOAT(&x, &y, mem);
 
                 char result[16];
                 float numeric_result = 0;
@@ -239,23 +257,50 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
                 // TODO: should do something
             } break;
 
+            case OP_BIND: {
+                assert(routine->tokens[i-1]->ttype == ID_INVOCATION);
+
+                Token *token = routine->tokens[i-1];
+                int var_j = gscope_search_variable(gscope, token->txt);
+
+                if (var_j != -1) {
+                    assert(mem->count >= 1);
+
+                    char *new_value = malloc(strlen(st_peek(mem, 0)));
+                    strcpy(new_value, st_peek(mem, 0));
+                    gscope->variables[var_j]->value = new_value;
+                    st_pop(mem);
+
+                } else {
+                    fprintf(stderr, ERR_PREFIX"Variable has not been declared: '%s'\n", ERR_EXP, token->txt);
+                    exit(EXIT_FAILURE);
+                }
+
+            } break;
+
             case ID_INVOCATION: {
 
                 // search routine in routines list
-                size_t j = gscope_search_routine(gscope, tk->txt);
+                int rte_j = gscope_search_routine(gscope, tk->txt);
+                int var_j = gscope_search_variable(gscope, tk->txt);
 
                 // routines has been declared
-                if (j != gscope->rte_count) {
+                if (rte_j != -1) {
 
                     // execute recursively routines
-                    rte_execute(gscope->routines[j], mem, gscope);
+                    rte_execute(gscope->routines[rte_j], mem, gscope);
+
+                } else if (var_j != -1) {
+
+                    // variable invocation
+                    if (routine->tokens[i+1]->ttype != OP_BIND) {
+                        st_push(mem, gscope->variables[var_j]->value);
+                    }
 
                 } else {
                     fprintf(stderr, ERR_PREFIX"Routine has not been declared: '%s'\n", ERR_EXP, tk->txt);
                     exit(EXIT_FAILURE);
                 }
-
-                // assert(0 && "Routines not implemented");
 
             } break;
 
@@ -295,13 +340,13 @@ GScope *gscope_create(const size_t rte_initial_capacity, const size_t var_initia
     GScope *gscope = malloc(sizeof(GScope));
 
     gscope->rte_count = 0;
-    // gscope->var_count = 0;
+    gscope->var_count = 0;
 
     gscope->rte_capacity = rte_initial_capacity;
-    // gscope->var_capacity = var_initial_capacity;
+    gscope->var_capacity = var_initial_capacity;
 
     gscope->routines = calloc(rte_initial_capacity, sizeof(*gscope->routines));
-    // gscope->variables = calloc(rte_initial_capacity, sizeof(*gscope->variables));
+    gscope->variables = calloc(rte_initial_capacity, sizeof(*gscope->variables));
 
     return gscope;
 }
@@ -309,7 +354,7 @@ GScope *gscope_create(const size_t rte_initial_capacity, const size_t var_initia
 void gscope_append_routine(GScope *gscope, Routine *routine)
 {
     if (gscope->rte_count == gscope->rte_capacity) {
-        gscope->rte_capacity = gscope->rte_capacity == 0 ? ROUTINES_INITIAL_CAPACITY : (gscope->rte_capacity*2);
+        gscope->rte_capacity = gscope->rte_capacity == 0 ? GSCOPE_ROUTINES_INITIAL_CAPACITY : (gscope->rte_capacity*2);
 
         gscope->routines = realloc(gscope->routines, gscope->rte_capacity*sizeof(*gscope->routines));
     }
@@ -317,15 +362,18 @@ void gscope_append_routine(GScope *gscope, Routine *routine)
     gscope->routines[gscope->rte_count++] = routine;
 }
 
-// void gscope_append_variable()
-// {
-// }
+void gscope_append_variable(GScope *gscope, Variable *variable)
+{
+    if (gscope->var_count == gscope->var_capacity) {
+        gscope->var_capacity = gscope->var_capacity == 0 ? GSCOPE_VARIABLES_INITIAL_CAPACITY : (gscope->var_capacity*2);
 
-// void gscope_search_variable()
-// {
-// }
+        gscope->variables = realloc(gscope->variables, gscope->var_capacity*sizeof(*gscope->variables));
+    }
 
-void gscope_log(GScope *gscope)
+    gscope->variables[gscope->var_count++] = variable;
+}
+
+void gscope_log_routines(GScope *gscope)
 {
     for (size_t j = 0; j < gscope->rte_count; ++j) {
         printf("ID: %s\n", gscope->routines[j]->id);
@@ -333,6 +381,13 @@ void gscope_log(GScope *gscope)
             printf("   ");
             tk_log(gscope->routines[j]->tokens[k]);
         }
+    }
+}
+
+void gscope_log_variables(GScope *gscope)
+{
+    for (size_t j = 0; j < gscope->var_count; ++j) {
+        printf("%s = %s\n", gscope->variables[j]->id, gscope->variables[j]->value);
     }
 }
 
@@ -363,8 +418,16 @@ void scan_modules(GScope *gscope, Module *mod) {
             case ID_VAR: {
 
                 assert(mod->tokens[i-1]->ttype == VAR_SYM);
-                // TODO: do something with variable list
-                assert(0 && "Variables not implemeted yet");
+
+                Token *value = mod->tokens[(++i)];
+
+                // name checks
+                assert(strcmp(tk->txt, "main") != 0);
+
+                assert(value->ttype == LIT_INT || value->ttype == LIT_FLOAT || value->ttype == LIT_STRING);
+
+                Variable *variable = var_create(tk->txt, value->txt);
+                gscope_append_variable(gscope, variable);
 
             } break;
 
