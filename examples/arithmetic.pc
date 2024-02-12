@@ -1,3 +1,9 @@
+:sum "Sum: " .. 7 5 + . end
+:sub "Sub: " .. 7 5 - . end
+:mul "Mul: " .. 7 5 * . end
+:div "Div: " .. 7 5 / . end
+:mod "Mod: " .. 7 5 % . end
+
 :main
-    -10.2 -2.0 * .
+    sum sub mul div mod
 end

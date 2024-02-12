@@ -1,1 +1,2 @@
-:main "Hello, World!" . end
+:hello-world "Hello World!" . end
+:main hello-world end

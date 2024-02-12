@@ -1,8 +1,0 @@
-@message "Hello"
-@fortine 550.33
-
-:hello 21 21 * end
-@number 1800
-:add a b + end
-
-:main 5 5 * . end

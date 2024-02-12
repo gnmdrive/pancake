@@ -1,4 +1,0 @@
-@message "Reverse Polish Notation" ; nice
-
-; main function
-:main "Hello" . " World!\n" . 508 202 + . end
