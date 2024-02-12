@@ -1,0 +1,4 @@
+@age 18
+:print-age "Age: " .. age . end
+
+:main print-age age 1 + age ! print-age end
