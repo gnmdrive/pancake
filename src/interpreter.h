@@ -199,15 +199,21 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
 
             } break;
 
-            case OP_PRINT: {
+            case KW_CR: printf("\n");
+                break;
+
+            case OP_EMIT: {
                 assert(mem->count >= 1);
-                printf("%s", st_peek(mem, 0));
+                for (size_t c = 0; st_peek(mem, 0)[c] != '\0'; c++)
+                    assert(isdigit(st_peek(mem, 0)[c]));
+
+                printf("%c", (char) atoi(st_peek(mem, 0)));
                 st_pop(mem);
             } break;
 
-            case OP_PRINT_LN: {
+            case OP_PRINT: {
                 assert(mem->count >= 1);
-                printf("%s\n", st_peek(mem, 0));
+                printf("%s", st_peek(mem, 0));
                 st_pop(mem);
             } break;
 
@@ -298,7 +304,9 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
                     }
 
                 } else {
-                    fprintf(stderr, ERR_PREFIX"Routine has not been declared: '%s'\n", ERR_EXP, tk->txt);
+                    if (routine->tokens[i+1]->ttype == OP_BIND) {
+                        fprintf(stderr, ERR_PREFIX"Variable has not been declared: '%s'\n", ERR_EXP, tk->txt);
+                    } else fprintf(stderr, ERR_PREFIX"Symbol has not been declared: '%s'\n", ERR_EXP, tk->txt);
                     exit(EXIT_FAILURE);
                 }
 

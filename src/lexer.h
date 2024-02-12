@@ -27,6 +27,7 @@ typedef enum {
     KW_DROP,
     KW_SWAP,
     KW_OVER,
+    KW_CR,
 
     OP_SUM,
     OP_SUB,
@@ -34,8 +35,8 @@ typedef enum {
     OP_DIV,
     OP_MOD,
 
+    OP_EMIT,
     OP_PRINT,
-    OP_PRINT_LN,
     OP_PRINT_MEM,
 
     OP_BIND,
@@ -88,6 +89,9 @@ char *ttype_tostr(TokenType ttype)
         case KW_OVER:
             return "KW_OVER";
             break;
+        case KW_CR:
+            return "KW_CR";
+            break;
         case OP_SUM:
             return "OP_SUM";
             break;
@@ -103,8 +107,8 @@ char *ttype_tostr(TokenType ttype)
         case OP_MOD:
             return "OP_MOD";
             break;
-        case OP_PRINT_LN:
-            return "OP_PRINT_LN";
+        case OP_EMIT:
+            return "OP_EMIT";
             break;
         case OP_PRINT:
             return "OP_PRINT";
@@ -116,7 +120,7 @@ char *ttype_tostr(TokenType ttype)
             return "OP_BIND";
             break;
         default:
-            assert(0 && "Unreachable");
+            assert(0 && "Unreachable, missing implementation of one or multiple enum values");
             break;
     }
 }
@@ -337,6 +341,9 @@ Module *lex_buffer(char* buffer)
                     else if (strcmp(txt, "swap") == 0) ttype = KW_SWAP; 
                     else if (strcmp(txt, "over") == 0) ttype = KW_OVER; 
 
+                    else if (strcmp(txt, "cr") == 0) ttype = KW_CR;
+                    else if (strcmp(txt, "emit") == 0) ttype = OP_EMIT;
+
                     // identifier invacation
                     else ttype = ID_INVOCATION;
                 }
@@ -380,19 +387,11 @@ Module *lex_buffer(char* buffer)
                     if (!isdigit(buffer[c+1])) ttype = OP_SUB;
                 }
                 else if (strcmp(txt, ".") == 0) {
-
-                    if (buffer[c+1] == '.') {
-                        if (buffer[c+2] == '.') {
-                            strncat(txt, buffer + c_start, 2);
+                    if (buffer[c+1] == 'm' && buffer[c+2] == 'e' && buffer[c+3] == 'm') {
+                            strncat(txt, buffer + c_start, 3);
                             ttype = OP_PRINT_MEM;
-                            c += 2;
-                        } else {
-                            strncat(txt, buffer + c_start, 1);
-                            ttype = OP_PRINT;
-                            c++;
-                        }
-                    }
-                    else ttype = OP_PRINT_LN;
+                            c += 3;
+                    } else ttype = OP_PRINT;
                 }
 
                 else {
