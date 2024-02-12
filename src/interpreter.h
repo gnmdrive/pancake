@@ -325,6 +325,17 @@ void gscope_append_routine(GScope *gscope, Routine *routine)
 // {
 // }
 
+void gscope_log(GScope *gscope)
+{
+    for (size_t j = 0; j < gscope->rte_count; ++j) {
+        printf("ID: %s\n", gscope->routines[j]->id);
+        for (size_t k = 0; k < gscope->routines[j]->tk_count; ++k) {
+            printf("   ");
+            tk_log(gscope->routines[j]->tokens[k]);
+        }
+    }
+}
+
 void gscope_destroy(GScope *gscope)
 {
     for (size_t i = 0; i < gscope->rte_count; ++i) {
@@ -335,17 +346,15 @@ void gscope_destroy(GScope *gscope)
     free(gscope);
 }
 
-void start_interpreter(Stack *mem, LexWork *lex_work) {
-    const size_t lex_work_size = lex_work->count;
-    GScope *gscope = gscope_create(ROUTINES_INITIAL_CAPACITY, VARIABLES_INITIAL_CAPACITY);
-    bool main_rte_found = false;
+void scan_modules(GScope *gscope, Module *mod) {
+    // this function currently takes as input one single module
+    // but in the future, when the module system will be implemented
+    // it will accepts a dynamic array of modules
 
-    for (size_t i = 0; i < lex_work_size; ++i) {
-        Token *tk = lex_work->tokens[i];
+    const size_t mod_size = mod->count;
 
-        if (main_rte_found) {
-            assert(0 && "This code is unusable");
-        }
+    for (size_t i = 0; i < mod_size; ++i) {
+        Token *tk = mod->tokens[i];
 
         switch (tk->ttype) {
 
@@ -353,27 +362,23 @@ void start_interpreter(Stack *mem, LexWork *lex_work) {
             case ROUTINE_SYM: break;
             case ID_VAR: {
 
-                assert(lex_work->tokens[i-1]->ttype == VAR_SYM);
+                assert(mod->tokens[i-1]->ttype == VAR_SYM);
                 // TODO: do something with variable list
                 assert(0 && "Variables not implemeted yet");
+
             } break;
 
             case ID_ROUTINE: {
 
-                assert(lex_work->tokens[i-1]->ttype == ROUTINE_SYM);
+                assert(mod->tokens[i-1]->ttype == ROUTINE_SYM);
 
                 // create routine and fill tokens array
                 Routine *routine = rte_create(tk->txt, TOKENS_INITIAL_CAPACITY);
-                while (lex_work->tokens[(++i)-1]->ttype != KW_END) {
-                    rte_append_token(routine, lex_work->tokens[i]);
+                while (mod->tokens[(++i)-1]->ttype != KW_END) {
+                    rte_append_token(routine, mod->tokens[i]);
                 }
 
                 gscope_append_routine(gscope, routine);
-
-                if (strcmp(tk->txt, "main") == 0) {
-                    main_rte_found = true;
-                    rte_execute(routine, mem, gscope);
-                }
 
             } break;
 
@@ -383,16 +388,6 @@ void start_interpreter(Stack *mem, LexWork *lex_work) {
         }
 
     }
-
-#ifdef DEBUG
-    for (size_t j = 0; j < gscope->rte_count; ++j) {
-        printf("ID: %s\n", gscope->routines[j]->id);
-        for (size_t k = 0; k < gscope->routines[j]->tk_count; ++k) {
-            printf("   ");
-            tk_log(gscope->routines[j]->tokens[k]);
-        }
-    }
-#endif // DEBUG
 }
 
 #endif // INTERPRETER_H_

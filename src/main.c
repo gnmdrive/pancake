@@ -69,26 +69,28 @@ int main()
     BUILD_TOKEN_TYPES(token_types);
 
     char *buffer = read_content_from_file(FILE_PATH);
-    LexWork *lex_work = lex_buffer(buffer);
+    Module *mod = lex_buffer(buffer);
 
 #ifdef DEBUG
 
     printf(">>>>>>> [LEX WORK]\n");
-    lwork_log(lex_work);
+    lwork_log(mod);
     printf("=========================================================\n");
 
+#endif // DEBUG
+
+    GScope *gscope = gscope_create(ROUTINES_INITIAL_CAPACITY, VARIABLES_INITIAL_CAPACITY);
+    
+    scan_modules(gscope, mod);
+#ifdef DEBUG
+    printf(">>>>>>> [ROUTINES]\n");
+    gscope_log(gscope);
+    printf("=========================================================\n");
 #endif // DEBUG
 
     Stack *mem = st_create_on_heap(MEM_CAPACITY);
-
-    
-#ifdef DEBUG
-    printf(">>>>>>> [ROUTINES]\n");
-#endif // DEBUG
-    start_interpreter(mem, lex_work);
-#ifdef DEBUG
-    printf("=========================================================\n");
-#endif // DEBUG
+    size_t main_rte = gscope_search_routine(gscope, "main");
+    rte_execute(gscope->routines[main_rte], mem, gscope);
 
     return EXIT_SUCCESS;
 }

@@ -147,7 +147,7 @@ typedef struct {
     size_t count;
     size_t capacity;
     char *file_path;
-} LexWork;
+} Module;
 
 Token *tk_create(char *txt, Location loc, TokenType ttype)
 {
@@ -183,71 +183,71 @@ void tk_destroy(Token *token)
     free(token);
 }
 
-LexWork *lwork_create(char *file_path, const size_t initial_capacity)
+Module *mod_create(char *file_path, const size_t initial_capacity)
 {
-    LexWork *lex_work = malloc(sizeof(LexWork));
-    if (lex_work == NULL) {
+    Module *mod = malloc(sizeof(Module));
+    if (mod == NULL) {
         fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
         exit(EXIT_FAILURE);
     }
 
-    lex_work->file_path = file_path;
-    lex_work->count = 0;
-    lex_work->capacity = initial_capacity;
+    mod->file_path = file_path;
+    mod->count = 0;
+    mod->capacity = initial_capacity;
 
-    lex_work->tokens = calloc(initial_capacity, sizeof(*lex_work->tokens));
-    if (lex_work->tokens == NULL) {
+    mod->tokens = calloc(initial_capacity, sizeof(*mod->tokens));
+    if (mod->tokens == NULL) {
         fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
         exit(EXIT_FAILURE);
     }
 
-    return lex_work;
+    return mod;
 }
 
-void lwork_append(LexWork *lex_work, Token *token)
+void mod_append(Module *mod, Token *token)
 {
     // reallocate memory doubling space
-    if (lex_work->count == lex_work->capacity) {
+    if (mod->count == mod->capacity) {
 
         // new computed capacity
-        lex_work->capacity = lex_work->capacity == 0 ? DEFAULT_LEXOUTCOME_INITIAL_CAPACITY : (lex_work->capacity*2);
+        mod->capacity = mod->capacity == 0 ? DEFAULT_LEXOUTCOME_INITIAL_CAPACITY : (mod->capacity*2);
 
-        lex_work->tokens = realloc(lex_work->tokens, lex_work->capacity*sizeof(*lex_work->tokens));
-        if (lex_work->tokens == NULL) {
+        mod->tokens = realloc(mod->tokens, mod->capacity*sizeof(*mod->tokens));
+        if (mod->tokens == NULL) {
             fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
             exit(EXIT_FAILURE);
         }
     }
 
-    lex_work->tokens[lex_work->count++] = token;
+    mod->tokens[mod->count++] = token;
 }
 
-Token *lwork_top(LexWork *lex_work)
+Token *mod_top(Module *mod)
 {
-    return *(lex_work->tokens + lex_work->count-1);
+    return *(mod->tokens + mod->count-1);
 }
 
-void lwork_log(LexWork *lex_work)
+void mod_log(Module *mod)
 {
-    for (size_t i = 0; i < lex_work->count; ++i) {
-        tk_log(*(lex_work->tokens+i));
+    for (size_t i = 0; i < mod->count; ++i) {
+        tk_log(*(mod->tokens+i));
     }
 }
 
-void lwork_destroy(LexWork *lex_work)
+void mod_destroy(Module *mod)
 {
     // deallocate all tokens
-    for (size_t i = 0; i < lex_work->count; ++i)
-        tk_destroy(*(lex_work->tokens+i));
+    for (size_t i = 0; i < mod->count; ++i)
+        tk_destroy(*(mod->tokens+i));
 
-    free(lex_work->tokens);
-    free(lex_work);
+    free(mod->tokens);
+    free(mod);
 }
 
 
-LexWork *lex_buffer(char* buffer)
+Module *lex_buffer(char* buffer)
 {
-    LexWork *lex_work = lwork_create("unknown.pc", 32);
+    Module *mod = mod_create("unknown.pc", 32);
     size_t buffer_size = strlen(buffer);
 
     // current char position
@@ -316,9 +316,9 @@ LexWork *lex_buffer(char* buffer)
                 strncat(txt, buffer + c_start, c - c_start);
 
                 // determine token type
-                if (lex_work->count != 0) {
+                if (mod->count != 0) {
                     // check if it is and identifier
-                    TokenType tt = lwork_top(lex_work)->ttype;
+                    TokenType tt = mod_top(mod)->ttype;
                     if (tt == ROUTINE_SYM) ttype = ID_ROUTINE;
                     else if (tt == VAR_SYM) ttype = ID_VAR;
                 }
@@ -402,12 +402,12 @@ LexWork *lex_buffer(char* buffer)
             // if type is unknow then current token should not be added to the outcome
             if (ttype != UNKNOWN) {
                 Token *tk = tk_create(txt, (Location) {row, col_start}, ttype);
-                lwork_append(lex_work, tk);
+                mod_append(mod, tk);
             }
         }
     }
 
-    return lex_work;
+    return mod;
 }
 
 #endif  // LEXER_H_
