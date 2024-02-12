@@ -19,6 +19,8 @@ Highly inspiderd by Forth, currently in development
 * Turing complete Programming Language (that's the goal)
 
 ### Next Steps
-* Work on the interpreter, fullfill requirements
-* Think about new features or addons
+* Make control flow statement available
+* Implement loops, take inspiration from Forth
+* Implement module system and write standard library
+* Think about new features and addons
 * Write basic tests
