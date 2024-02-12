@@ -62,7 +62,7 @@ char *read_content_from_file(const char *file_path)
 }
 
 #define MEM_CAPACITY 128
-#define FILE_PATH "examples/output.pc"
+#define FILE_PATH "examples/variables.pc"
 
 int main()
 {

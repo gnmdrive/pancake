@@ -12,6 +12,7 @@ typedef enum {
     LIT_STRING,
     LIT_INT,
     LIT_FLOAT,
+    LIT_BOOL,
 
     ID_INVOCATION,
 
@@ -58,6 +59,9 @@ char *ttype_tostr(TokenType ttype)
             break;
         case LIT_FLOAT:
             return "LIT_FLOAT";
+            break;
+        case LIT_BOOL:
+            return "LIT_BOOL";
             break;
         case ID_INVOCATION:
             return "ID_INVOCATION";
@@ -343,6 +347,9 @@ Module *lex_buffer(char* buffer)
 
                     else if (strcmp(txt, "cr") == 0) ttype = KW_CR;
                     else if (strcmp(txt, "emit") == 0) ttype = OP_EMIT;
+
+                    else if (strcmp(txt, "true") == 0 || strcmp(txt, "false") == 0)
+                        ttype = LIT_BOOL;
 
                     // identifier invacation
                     else ttype = ID_INVOCATION;

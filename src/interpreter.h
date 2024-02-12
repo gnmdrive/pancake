@@ -432,7 +432,7 @@ void scan_modules(GScope *gscope, Module *mod) {
                 // name checks
                 assert(strcmp(tk->txt, "main") != 0);
 
-                assert(value->ttype == LIT_INT || value->ttype == LIT_FLOAT || value->ttype == LIT_STRING);
+                assert(value->ttype == LIT_INT || value->ttype == LIT_FLOAT || value->ttype == LIT_STRING || value->ttype == LIT_BOOL);
 
                 Variable *variable = var_create(tk->txt, value->txt);
                 gscope_append_variable(gscope, variable);
