@@ -402,7 +402,7 @@ void gscope_log_routines(GScope *gscope)
 void gscope_log_variables(GScope *gscope)
 {
     for (size_t j = 0; j < gscope->var_count; ++j) {
-        printf("%s =", gscope->variables[j]->id);
+        printf("%s = ", gscope->variables[j]->id);
         value_log(gscope->variables[j]->value);
     }
 }
@@ -423,6 +423,7 @@ void scan_modules(GScope *gscope, Module *mod) {
     // it will accepts a dynamic array of modules
 
     const size_t mod_size = mod->count;
+    bool entry_point_found = false;
 
     for (size_t i = 0; i < mod_size; ++i) {
         Token *tk = mod->tokens[i];
@@ -432,52 +433,72 @@ void scan_modules(GScope *gscope, Module *mod) {
             case VAR_SYM: break;
             case ROUTINE_SYM: break;
             case ID_VAR: {
+ 
+                if (entry_point_found) {
+                    // printf("variable\n");
+                    printf("dead code %zu:%zu\n", tk->loc.row, tk->loc.col);
+                    i++;
 
-                assert(mod->tokens[i-1]->ttype == VAR_SYM);
+                    break;
+                } else {
 
-                Token *value = mod->tokens[(++i)];
+                    assert(mod->tokens[i-1]->ttype == VAR_SYM);
 
-                // name checks
-                assert(strcmp(tk->txt, "main") != 0);
+                    Token *value = mod->tokens[(++i)];
 
-                assert(value->ttype == LIT_INT || value->ttype == LIT_FLOAT || value->ttype == LIT_STRING || value->ttype == LIT_BOOL);
+                    // name checks
+                    assert(strcmp(tk->txt, "main") != 0);
 
-                ValueType vtype = VT_UNKNOWN;
+                    assert(value->ttype == LIT_INT || value->ttype == LIT_FLOAT || value->ttype == LIT_STRING || value->ttype == LIT_BOOL);
 
-                switch (value->ttype) {
-                    case LIT_STRING: vtype = VT_STRING;
-                        break;
-                    case LIT_INT: vtype = VT_INT;
-                        break;
-                    case LIT_FLOAT: vtype = VT_FLOAT;
-                        break;
-                    case LIT_BOOL: vtype = VT_BOOL;
-                        break;
-                    default:
-                        assert(0 && "Unreachable");
-                        break;
+                    ValueType vtype = VT_UNKNOWN;
+
+                    switch (value->ttype) {
+                        case LIT_STRING: vtype = VT_STRING;
+                            break;
+                        case LIT_INT: vtype = VT_INT;
+                            break;
+                        case LIT_FLOAT: vtype = VT_FLOAT;
+                            break;
+                        case LIT_BOOL: vtype = VT_BOOL;
+                            break;
+                        default:
+                            assert(0 && "Unreachable");
+                            break;
+                    }
+
+                    Variable *variable = var_create(tk->txt, value_create(value->txt,vtype));
+                    gscope_append_variable(gscope, variable);
                 }
-
-                Variable *variable = var_create(tk->txt, value_create(value->txt,vtype));
-                gscope_append_variable(gscope, variable);
 
             } break;
 
             case ID_ROUTINE: {
 
-                assert(mod->tokens[i-1]->ttype == ROUTINE_SYM);
+                if (entry_point_found) {
+                    printf("dead code %zu:%zu\n", tk->loc.row, tk->loc.col);
+                    while (mod->tokens[i-1]->ttype != KW_END) i++;
+                    break;
+                } else {
 
-                // create routine and fill tokens array
-                Routine *routine = rte_create(tk->txt, TOKENS_INITIAL_CAPACITY);
-                while (mod->tokens[(++i)-1]->ttype != KW_END) {
-                    rte_append_token(routine, mod->tokens[i]);
+                    assert(mod->tokens[i-1]->ttype == ROUTINE_SYM);
+                    if (strcmp(tk->txt, "main") == 0) {
+                        entry_point_found = true;
+                    }
+
+                    // create routine and fill tokens array
+                    Routine *routine = rte_create(tk->txt, TOKENS_INITIAL_CAPACITY);
+                    while (mod->tokens[(++i)-1]->ttype != KW_END) {
+                        rte_append_token(routine, mod->tokens[i]);
+                    }
+
+                    gscope_append_routine(gscope, routine);
                 }
-
-                gscope_append_routine(gscope, routine);
 
             } break;
 
             default: {
+                printf("TokenType not allowed: %s\n", ttype_tostr(tk->ttype));
                 assert(0 && "TokenType not allowed");
             }
         }

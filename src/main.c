@@ -68,7 +68,7 @@ void build_enums_str_reprs()
 }
 
 #define MEM_CAPACITY 128
-#define FILE_PATH "examples/variables.pc"
+#define FILE_PATH "examples/tests.pc"
 
 int main()
 {

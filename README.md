@@ -5,9 +5,12 @@ Highly inspiderd by Forth, currently in development
 **Pancake?** Yes, because usually, each pancake lies on top of each other, just like the structure of a [stack](https://en.wikipedia.org/wiki/Stack_(abstract_data_type)) ;)
 
 ```
-; code example (showcase purpose)
-@text "Hello, World!"
-:main text . end
+; hello world example (showcase purpose)
+"std"
+
+:main
+    "Hello, World!" dump
+end
 ```
 
 ## Features
