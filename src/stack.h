@@ -5,30 +5,31 @@
 #define DEFAULT_STACK_INITIAL_CAPACITY 16
 
 typedef enum {
-    STRING,
-    INT,
-    FLOAT,
-    BOOL,
+    VT_UNKNOWN,
+    VT_STRING,
+    VT_INT,
+    VT_FLOAT,
+    VT_BOOL,
     VT_IOTA,
 } ValueType;
 
 char *vtype_tostr(ValueType vtype)
 {
     switch (vtype) {
-        case STRING:
-            return "STRING";
+        case VT_STRING:
+            return "VT_STRING";
             break;
-        case INT:
-            return "INT";
+        case VT_INT:
+            return "VT_INT";
             break;
-        case FLOAT:
-            return "FLOAT";
+        case VT_FLOAT:
+            return "VT_FLOAT";
             break;
-        case BOOL:
-            return "BOOL";
+        case VT_BOOL:
+            return "VT_BOOL";
             break;
         default:
-            assert(0 && "Missing one or multiple value types in enum");
+            assert(0 && "Missing one or multiple ValueType in enum");
             break;
     }
 }
@@ -40,8 +41,31 @@ typedef struct {
     ValueType type;
 } Value;
 
+Value *value_create(char *txt, ValueType vtype)
+{
+    Value *value = malloc(sizeof(ValueType));
+
+    // this funciton manage memory on its own
+    value->txt = malloc(strlen(txt));
+    strcpy(value->txt, txt);
+
+    value->type = vtype;
+    return value;
+}
+
+void value_log(Value *value)
+{
+    printf("(%s) %s\n", vtype_tostr(value->type), value->txt);
+}
+
+void value_destroy(Value *value)
+{
+    free(value->txt);
+    free(value);
+}
+
 typedef struct {
-    char **items;
+    Value **items;
     size_t count;
     size_t capacity;
 } Stack;
@@ -79,7 +103,7 @@ Stack *st_create_on_heap(const size_t initial_capacity)
     return stack;
 }
 
-void st_push(Stack *stack, char *item)
+void st_push(Stack *stack, Value *item)
 {
     // if count is equal to capacity reallocate memory using more space
     if (stack->count == stack->capacity) {
@@ -91,27 +115,19 @@ void st_push(Stack *stack, char *item)
         }
     }
 
-    // this function manages memory on its own
-    *(stack->items+stack->count) = malloc(strlen(item));
-    if (*(stack->items+stack->count) == NULL) {
-        fprintf(stderr, ERR_PREFIX"Could not allocate memory\n", ERR_EXP);
-        exit(EXIT_FAILURE);
-    }
-
-    // it doesn't matter where item argument is allocated, it will be copied
-    strcpy(*(stack->items+stack->count++), item);
+    stack->items[stack->count++] = item;
 }
 
-char *st_peek(Stack *stack, size_t n)
+Value *st_peek(Stack *stack, size_t n)
 {
-    return *(stack->items+stack->count-1-n);
+    return stack->items[stack->count-1-n];
 }
 
 void st_pop(Stack *stack)
 {
-    // this function is intended to be used right after st_peek(st) if you
+    // this function is intended to be used right after st_peek(st, n) if you
     // want to get top element before deleting
-    free(*(stack->items+stack->count-1));
+    value_destroy(stack->items[stack->count-1]);
     stack->count--;
 }
 
@@ -119,7 +135,7 @@ void st_destroy_from_stack(Stack *stack)
 {
     // deallocate memory on the heap
     for (size_t i = 0; i < stack->count; ++i)
-        free(*(stack->items+i));
+        value_destroy(stack->items[i]);
     free(stack->items);
 }
 
@@ -135,13 +151,14 @@ void st_destroy_from_heap(Stack *stack)
 void st_display(Stack *stack)
 {
     if (stack->count != 0) {
-        char **begin_pt = stack->items;
-        char **end_pt = begin_pt + stack->count-1; 
-
+        size_t i = 0;
+        size_t stack_count = stack->count-1;
         printf("[");
-        while (begin_pt != end_pt)
-            printf("%s, ", *begin_pt++);
-        printf("%s <-\n", *begin_pt);
+        while (i < stack_count) {
+            printf("(%s) %s, ", vtype_tostr(stack->items[i]->type), stack->items[i]->txt);
+            i++;
+        }
+        printf("(%s) %s <-\n", vtype_tostr(stack->items[i]->type), stack->items[i]->txt);
     } else printf("[ <-\n");
 }
 

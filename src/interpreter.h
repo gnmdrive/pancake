@@ -11,7 +11,7 @@
 
 #define CHECK_LAST_NUMBERS_TYPE(mem, message)                       \
 do {                                                                \
-    if (atoi(st_peek(mem, 0)) == 0 || atoi(st_peek(mem, 1)) == 0) { \
+    if (atoi(st_peek(mem, 0)->txt) == 0 || atoi(st_peek(mem, 1)->txt) == 0) { \
         fprintf(stderr, message);                                   \
         exit(EXIT_FAILURE);                                         \
     }                                                               \
@@ -19,8 +19,8 @@ do {                                                                \
 
 #define RETRIEVE_LAST_NUMBERS_FLOAT(x, y, mem) \
 do {                                           \
-    char *a = st_peek(mem, 0);                 \
-    char *b = st_peek(mem, 1);                 \
+    char *a = st_peek(mem, 0)->txt;                 \
+    char *b = st_peek(mem, 1)->txt;                 \
     float x_res = atof(a);                     \
     float y_res = atof(b);                     \
     st_pop(mem);                               \
@@ -35,7 +35,7 @@ do {                                           \
 
 typedef struct {
     char *id;
-    char *value;
+    Value *value;
 } Variable;
 
 typedef struct {
@@ -60,7 +60,7 @@ typedef struct {
     size_t var_count;
 } GScope;
 
-Variable *var_create(char *id, char *value)
+Variable *var_create(char *id, Value *value)
 {
     Variable *variable = malloc(sizeof(Variable));
     variable->id = id;
@@ -137,20 +137,20 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
                 }
 
                 // everything is ok
-                st_push(mem, tk->txt);
+                st_push(mem, value_create(tk->txt, VT_STRING));
 
             } break;
 
-            case LIT_FLOAT:
+            case LIT_FLOAT: {
+                st_push(mem, value_create(tk->txt, VT_FLOAT));
+            } break;
+
             case LIT_INT: {
-
-                // push wathever number types
-                st_push(mem, tk->txt);
-
+                st_push(mem, value_create(tk->txt, VT_INT));
             } break;
 
             case LIT_BOOL: {
-                st_push(mem, strcmp(tk->txt, "true") == 0 ? "1" : "0");
+                st_push(mem, value_create(tk->txt, VT_BOOL));
             } break;
 
             case OP_SUM: 
@@ -192,14 +192,16 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
                 // verify if result has a fractional part
                 double fractpart, intpart;
                 fractpart = modf(numeric_result, &intpart);
+                ValueType vtype = VT_FLOAT;
 
                 // if result its essentially an int then convert it
                 if (fractpart == 0) {
                     sprintf(result, "%d", (int) numeric_result);
+                    vtype = VT_INT;
                 } else sprintf(result, "%f", numeric_result);
 
                 // push result as a string
-                st_push(mem, result);
+                st_push(mem, value_create(result, vtype));
 
             } break;
 
@@ -208,16 +210,16 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
 
             case OP_EMIT: {
                 assert(mem->count >= 1);
-                for (size_t c = 0; st_peek(mem, 0)[c] != '\0'; c++)
-                    assert(isdigit(st_peek(mem, 0)[c]));
+                for (size_t c = 0; st_peek(mem, 0)->txt[c] != '\0'; c++)
+                    assert(isdigit(st_peek(mem, 0)->txt[c]));
 
-                printf("%c", (char) atoi(st_peek(mem, 0)));
+                printf("%c", (char) atoi(st_peek(mem, 0)->txt));
                 st_pop(mem);
             } break;
 
             case OP_PRINT: {
                 assert(mem->count >= 1);
-                printf("%s", st_peek(mem, 0));
+                printf("%s", st_peek(mem, 0)->txt);
                 st_pop(mem);
             } break;
 
@@ -228,7 +230,7 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
 
             case KW_DUP: {
                 assert(mem->count >= 1);
-                st_push(mem, st_peek(mem, 0));
+                st_push(mem, value_create(st_peek(mem, 0)->txt, st_peek(mem, 0)->type));
             } break;
 
             case KW_DROP: {
@@ -238,11 +240,8 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
 
             case KW_SWAP: {
                 assert(mem->count >= 2);
-                char last[64];
-                char second_last[64];
-
-                strcpy(last, st_peek(mem, 0));
-                strcpy(second_last, st_peek(mem, 1));
+                Value *last = value_create(st_peek(mem, 0)->txt, st_peek(mem, 0)->type);
+                Value *second_last = value_create(st_peek(mem, 1)->txt, st_peek(mem, 1)->type);
 
                 st_pop(mem);
                 st_pop(mem);
@@ -254,7 +253,7 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
 
             case KW_OVER: {
                 assert(mem->count >= 2);
-                st_push(mem, st_peek(mem, 1));
+                st_push(mem, value_create(st_peek(mem, 1)->txt, st_peek(mem, 1)->type));
             } break;
 
             case KW_END: {
@@ -276,8 +275,8 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
                 if (var_j != -1) {
                     assert(mem->count >= 1);
 
-                    char *new_value = malloc(strlen(st_peek(mem, 0)));
-                    strcpy(new_value, st_peek(mem, 0));
+                    Value *new_value = value_create(st_peek(mem, 0)->txt, st_peek(mem, 0)->type);
+
                     gscope->variables[var_j]->value = new_value;
                     st_pop(mem);
 
@@ -403,7 +402,8 @@ void gscope_log_routines(GScope *gscope)
 void gscope_log_variables(GScope *gscope)
 {
     for (size_t j = 0; j < gscope->var_count; ++j) {
-        printf("%s = %s\n", gscope->variables[j]->id, gscope->variables[j]->value);
+        printf("%s =", gscope->variables[j]->id);
+        value_log(gscope->variables[j]->value);
     }
 }
 
@@ -442,7 +442,23 @@ void scan_modules(GScope *gscope, Module *mod) {
 
                 assert(value->ttype == LIT_INT || value->ttype == LIT_FLOAT || value->ttype == LIT_STRING || value->ttype == LIT_BOOL);
 
-                Variable *variable = var_create(tk->txt, value->txt);
+                ValueType vtype = VT_UNKNOWN;
+
+                switch (value->ttype) {
+                    case LIT_STRING: vtype = VT_STRING;
+                        break;
+                    case LIT_INT: vtype = VT_INT;
+                        break;
+                    case LIT_FLOAT: vtype = VT_FLOAT;
+                        break;
+                    case LIT_BOOL: vtype = VT_BOOL;
+                        break;
+                    default:
+                        assert(0 && "Unreachable");
+                        break;
+                }
+
+                Variable *variable = var_create(tk->txt, value_create(value->txt,vtype));
                 gscope_append_variable(gscope, variable);
 
             } break;

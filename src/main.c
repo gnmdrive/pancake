@@ -42,7 +42,7 @@ char *read_content_from_file(const char *file_path)
 {
     FILE *file_pointer = open_file(file_path);
 
-    // consider null terminating character
+    // consider null character for string termination
     size_t buffer_size = get_file_content_length(file_pointer)+1;
 
     // allocate necessary memory
