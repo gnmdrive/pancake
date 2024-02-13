@@ -155,10 +155,10 @@ void st_display(Stack *stack)
         size_t stack_count = stack->count-1;
         printf("[");
         while (i < stack_count) {
-            printf("(%s) %s, ", vtype_tostr(stack->items[i]->type), stack->items[i]->txt);
+            printf("%s, ", stack->items[i]->txt);
             i++;
         }
-        printf("(%s) %s <-\n", vtype_tostr(stack->items[i]->type), stack->items[i]->txt);
+        printf("%s <-\n", stack->items[i]->txt);
     } else printf("[ <-\n");
 }
 

@@ -1,8 +1,8 @@
-:sum "Sum: " .. 7 5 + . cr end
-:sub "Sub: " .. 7 5 - . cr end
-:mul "Mul: " .. 7 5 * . cr end
-:div "Div: " .. 7 5 / . cr end
-:mod "Mod: " .. 7 5 % . cr end
+:sum "Sum: " . 7 5 + . cr end
+:sub "Sub: " . 7 5 - . cr end
+:mul "Mul: " . 7 5 * . cr end
+:div "Div: " . 7 5 / . cr end
+:mod "Mod: " . 7 5 % . cr end
 
 :main
     sum sub mul div mod

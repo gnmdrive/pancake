@@ -224,7 +224,7 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
             } break;
 
             case OP_PRINT_MEM: {
-                assert(mem->count >= 1);
+                // assert(mem->count >= 1);
                 st_display(mem);
             } break;
 

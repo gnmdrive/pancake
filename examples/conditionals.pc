@@ -1,0 +1,2 @@
+:dump . cr end
+:main true true .mem == dump end
