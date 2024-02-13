@@ -19,6 +19,8 @@ Highly inspiderd by Forth, currently in development
 * Turing complete Programming Language (that's the goal)
 
 ### Next Steps
+* Conclude refactoring, separate things into files
+* Lexer should be able to recognize symbols only if they are space-separated
 * Make control flow statement available
 * Implement loops, take inspiration from Forth
 * Implement module system and write standard library
