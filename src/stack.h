@@ -4,6 +4,42 @@
 
 #define DEFAULT_STACK_INITIAL_CAPACITY 16
 
+typedef enum {
+    STRING,
+    INT,
+    FLOAT,
+    BOOL,
+    VT_IOTA,
+} ValueType;
+
+char *vtype_tostr(ValueType vtype)
+{
+    switch (vtype) {
+        case STRING:
+            return "STRING";
+            break;
+        case INT:
+            return "INT";
+            break;
+        case FLOAT:
+            return "FLOAT";
+            break;
+        case BOOL:
+            return "BOOL";
+            break;
+        default:
+            assert(0 && "Missing one or multiple value types in enum");
+            break;
+    }
+}
+
+char **value_types_enum_str_repr;
+
+typedef struct {
+    char *txt;
+    ValueType type;
+} Value;
+
 typedef struct {
     char **items;
     size_t count;

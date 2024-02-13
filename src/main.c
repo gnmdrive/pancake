@@ -61,15 +61,19 @@ char *read_content_from_file(const char *file_path)
     return buffer;
 }
 
+void build_enums_str_reprs()
+{
+    BUILD_ENUM_STR_REPR(token_types_enum_str_repr, _IOTA, TokenType, ttype_tostr);
+    BUILD_ENUM_STR_REPR(value_types_enum_str_repr, VT_IOTA, ValueType, vtype_tostr);
+}
+
 #define MEM_CAPACITY 128
-#define FILE_PATH "examples/variables.pc"
+#define FILE_PATH "examples/conditionals.pc"
 
 int main()
 {
-    BUILD_TOKEN_TYPES(token_types);
-
     char *buffer = read_content_from_file(FILE_PATH);
-    Module *mod = lex_buffer(buffer);
+    Module *mod = lex_buffer(buffer, FILE_PATH);
 
 #ifdef DEBUG
 

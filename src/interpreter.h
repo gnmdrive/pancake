@@ -149,6 +149,10 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
 
             } break;
 
+            case LIT_BOOL: {
+                st_push(mem, strcmp(tk->txt, "true") == 0 ? "1" : "0");
+            } break;
+
             case OP_SUM: 
             case OP_SUB:
             case OP_MUL:
@@ -310,6 +314,10 @@ void rte_execute(Routine *routine, Stack *mem, GScope *gscope)
                     exit(EXIT_FAILURE);
                 }
 
+            } break;
+
+            case OP_EQ: {
+                assert(0 && "Equals not implemented yet");
             } break;
 
             case ID_ROUTINE: {

@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#define DEFAULT_LEXOUTCOME_INITIAL_CAPACITY 128
+#define MODULE_INITIAL_CAPACITY 128
 #define MAXIMUM_TOKEN_TXT_SIZE 64
 
 typedef enum {
@@ -36,6 +36,12 @@ typedef enum {
     OP_DIV,
     OP_MOD,
 
+    OP_EQ,
+    // OP_GT,
+    // OP_GTE,
+    // OP_LT,
+    // OP_LTE,
+
     OP_EMIT,
     OP_PRINT,
     OP_PRINT_MEM,
@@ -44,6 +50,23 @@ typedef enum {
 
     _IOTA
 } TokenType;
+
+char **token_types_enum_str_repr;
+#define BUILD_ENUM_STR_REPR(enum_str_repr, iota, enum_type, enum_tostr_fn)                            \
+do {                                                          \
+    enum_str_repr = calloc(iota, sizeof(char*)); \
+    for (int i = 0; i < iota; ++i) {                       \
+        char *str = (*enum_tostr_fn)((enum_type) i);               \
+        enum_str_repr[i] = malloc(strlen(str));   \
+        strcpy(enum_str_repr[i], str);            \
+    }                                                         \
+} while (0)
+
+#define ENUM_STR_REPR_LOG(enum_str_repr, iota)         \
+do {                                    \
+    for (int i = 0; i < iota; ++i)     \
+        printf("%s\n", enum_str_repr[i]); \
+} while (0)
 
 char *ttype_tostr(TokenType ttype)
 {
@@ -123,25 +146,13 @@ char *ttype_tostr(TokenType ttype)
         case OP_BIND:
             return "OP_BIND";
             break;
+        case OP_EQ:
+            return "OP_EQ";
+            break;
         default:
             assert(0 && "Unreachable, missing implementation of one or multiple enum values");
             break;
     }
-}
-
-char **token_types;
-#define BUILD_TOKEN_TYPES(tt) do {               \
-    tt = calloc(_IOTA, sizeof(char*));           \
-    for (int i = 0; i < _IOTA; ++i) {            \
-        char *str = ttype_tostr((TokenType) i);  \
-        tt[i] = malloc(strlen(str));             \
-        strcpy(tt[i], str);                      \
-    }                                            \
-} while (0)
-
-void token_types_log() {
-    for (int i = 0; i < _IOTA; ++i) 
-        printf("%s\n", token_types[i]);
 }
 
 typedef struct {
@@ -223,7 +234,7 @@ void mod_append(Module *mod, Token *token)
     if (mod->count == mod->capacity) {
 
         // new computed capacity
-        mod->capacity = mod->capacity == 0 ? DEFAULT_LEXOUTCOME_INITIAL_CAPACITY : (mod->capacity*2);
+        mod->capacity = mod->capacity == 0 ? MODULE_INITIAL_CAPACITY : (mod->capacity*2);
 
         mod->tokens = realloc(mod->tokens, mod->capacity*sizeof(*mod->tokens));
         if (mod->tokens == NULL) {
@@ -242,7 +253,9 @@ Token *mod_top(Module *mod)
 
 void mod_log(Module *mod)
 {
+    printf("PATH: %s\n", mod->file_path);
     for (size_t i = 0; i < mod->count; ++i) {
+        printf("   ");
         tk_log(*(mod->tokens+i));
     }
 }
@@ -258,9 +271,9 @@ void mod_destroy(Module *mod)
 }
 
 
-Module *lex_buffer(char* buffer)
+Module *lex_buffer(char* buffer, char* file_path)
 {
-    Module *mod = mod_create("unknown.pc", 32);
+    Module *mod = mod_create(file_path, MODULE_INITIAL_CAPACITY);
     size_t buffer_size = strlen(buffer);
 
     // current char position
@@ -388,7 +401,14 @@ Module *lex_buffer(char* buffer)
                 else if (strcmp(txt, "*") == 0) ttype = OP_MUL;
                 else if (strcmp(txt, "/") == 0) ttype = OP_DIV;
                 else if (strcmp(txt, "%") == 0) ttype = OP_MOD;
-                else if (strcmp(txt, "!") == 0) ttype = OP_BIND;
+                else if (strcmp(txt, "=") == 0) {
+                    if (buffer[c+1] == '=') {
+                        strncat(txt, buffer + c_start, 1);
+                        ttype = OP_EQ;
+                        c++;
+                    }
+                    else ttype = OP_BIND;
+                }
 
                 else if (strcmp(txt, "-") == 0) {
                     if (!isdigit(buffer[c+1])) ttype = OP_SUB;
